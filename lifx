@@ -2,8 +2,8 @@
 
 #
 # Simple script to control your LIFX lamps using the cli by doing RESTful calls
-# to the api. Needs a valid lifx token to make requests, the token should be
-# saved in $HOME/.config/lifx/lifx_token
+# to the lifx api. Needs a valid lifx token to make requests, the token should
+# be saved in $HOME/.config/lifx/lifx_token
 #
 # @author David Goransson
 #
@@ -29,15 +29,21 @@ class ConnectionHandle:
 
     def _send_request(self, c):
         storage = StringIO()
+
         c.setopt(c.WRITEFUNCTION, storage.write)
-        c.setopt(pycurl.CONNECTTIMEOUT, 3)
-        c.setopt(pycurl.TIMEOUT, 3)
+        c.setopt(pycurl.CONNECTTIMEOUT, 5)
+        c.setopt(pycurl.TIMEOUT, 5)
         c.setopt(pycurl.USERPWD, token)
-        c.perform()
+        try:
+           c.perform()
+        except pycurl.error:
+            error_exit("Timeout - Unable to reach the server, verify your internet connection")
+
         content = storage.getvalue()
         http_code = c.getinfo(pycurl.HTTP_CODE)
         c.close()
         handle_response(http_code)
+
         return http_code, content
 
     def _build_url(self, selector, action):
@@ -90,72 +96,63 @@ class Parser:
     def ___init__(self):
         pass
 
-    def duration(self, options):
+    def duration(self, arg):
+        options, remainder = getopt.getopt(arg[1:], 'd:', ["duration=" ])
+
         for opt, arg in options:
             if opt in ('-d', '--duration'):
-                return arg
-        #Return default value
-        return "1.0"
+                return arg, remainder
 
-    def selector(self, options):
+        #Return default value
+        return "1.0", remainder
+
+    def selector(self, arg):
+        options, remainder = getopt.getopt(arg, 'al:g:L:', ["all", "label=", "group=", "location=" ])
+
         #Default select all
         selector="all"
 
-        count=0
+        if(len(options) > 1):
+            error_exit("Too many selectors!")
+
         for opt, arg in options:
             if opt in ('-a', '--all'):
                 selector = "all"
-                count += 1
             elif opt in ('-l', '--label'):
                 selector = "label:" + arg
-                count += 1
             elif opt in ('-g', '--group'):
                 selector = "group:" + arg
-                count += 1
             elif opt in ('-L', '--location'):
                 selector = "location:" + arg
-                count += 1
-        if(count > 1):
-            error_exit("Too many selectors!")
-        return selector
+
+        return selector, remainder
 
     def color(self, arg):
-        options, remainder = getopt.getopt(arg, 'b:h:s:k:r:d:al:g:L:', ["brightness=", "hue=", "kelvin=", "rgb=", "saturation=", "duration=", "all", "label=", "group=", "location=" ])
+        options, remainder = getopt.getopt(arg, 'b:h:s:k:r:d:al:g:L:', ["brightness=", "hue=", "kelvin=", "rgb=", "saturation="])
 
-        count = 0
+        if len(arg) > 0:
+            color = arg[0]
+            colors = ("white", "red", "orange", "yellow", "cyan", "green", "blue", "purple", "pink")
+            if not (color in colors or color.startswith("#")):
+                error_exit("Bad color argument!")
+            return color, remainder
+
+        if len(options) != 1:
+            error_exit("Only exactly one argument for command color can be supplied")
+
         for opt, arg in options:
             if opt in ('-b', '--brightness'):
                 color = "brightness:" + arg
-                count += 1
             elif opt in ('-h', '--hue'):
                 color = "hue:" + arg
-                count += 1
             elif opt in ('-k', '--kelvin'):
                 color = "kelvin:" + arg
-                count += 1
             elif opt in ('-r', '--rgb'):
                 color = "rgb:" + arg
-                count += 1
             elif opt in ('-s', '--saturation'):
                 color = "saturation:" + arg
-                count += 1
 
-        duration = self.duration(options)
-        selector = self.selector(options)
-
-        if len(arg) > 0:
-            colorarg = arg[0]
-            colors = ("white", "red", "orange", "yellow", "cyan", "green", "blue", "purple", "pink")
-
-            if (colorarg in colors or colorarg.startswith("#")):
-                return (arg[0], duration, selector)
-
-        handle_remainder(remainder)
-
-        if(count != 1):
-            error_exit("Bad color argument!")
-
-        return [color, duration, selector]
+        return color, remainder
 
 ######################################
 
@@ -170,15 +167,15 @@ def error_exit(msg=None):
     sys.exit(1)
 
 def handle_response(code):
-    if(code in (200 ,201, 202, 207)):
+    if code in (200 ,201, 202, 207):
         return;
-    elif(code == 401):
-        print("Unauthorized request")
-    elif(code == 408):
-        print("Request timed out, light unreachable!")
-    elif(code == 429):
+    elif code == 401:
+        print("Unauthorized request - Verify your lifx token")
+    elif code == 408:
+        print("Request timed out -  Light unreachable!")
+    elif code == 429:
         print("Too many requests!")
-    elif(code in (500, 502, 503, 523)):
+    elif code in (500, 502, 503, 523):
         print("Server error!")
     else:
         print("Unknown error! HTTP CODE: " + str(code))
@@ -217,11 +214,10 @@ def handle_power(arg):
         print_help_power()
         error_exit()
 
-    options, remainder = getopt.getopt(arg[1:], 'd:al:g:L:', ["duration=", "all", "label=", "group=", "location=" ])
-    duration = Parser().duration(options)
-    selector = Parser().selector(options)
-
+    duration, rest = Parser().duration(arg[1:])
+    selector, remainder = Parser().selector(rest)
     handle_remainder(remainder)
+
     LIFX().power(arg[0], duration, selector)
 
 ############### TOGGLE ################
@@ -230,8 +226,7 @@ def print_help_toggle():
     print_help_selector()
 
 def handle_toggle(arg):
-    options, remainder = getopt.getopt(arg, 'al:g:L:', ["all", "label=", "group=", "location=" ])
-    selector = Parser().selector(options)
+    selector, remainder = Parser().selector(arg)
     handle_remainder(remainder)
     LIFX().toggle(selector)
 
@@ -241,8 +236,7 @@ def print_help_list():
     print_help_selector()
 
 def handle_list(arg):
-    options, remainder = getopt.getopt(arg, 'al:g:L:', ["all", "label=", "group=", "location=" ])
-    selector = Parser().selector(options)
+    selector, remainder = Parser().selector(arg)
     handle_remainder(remainder)
     code, data = LIFX().list_lamps(selector)
     decoded = json.loads(data)
@@ -275,8 +269,13 @@ def handle_color(arg):
     if len(arg) < 1:
         print_help_color()
         error_exit()
-    arr = Parser().color(arg)
-    LIFX().color(arr[0], arr[1], arr[2])
+
+    color, rest = Parser().color(arg)
+    duration, rest = Parser().duration(rest)
+    selector, remainder = Parser().selector(rest)
+    handle_remainder(remainder)
+
+    LIFX().color(color, duration, selector)
 
 def main(argv):
     if len(argv) < 1 or argv[0] not in actions:
@@ -285,15 +284,15 @@ def main(argv):
 
     action = argv[0]
     args = argv[1:]
-    if(action == "power"):
+    if action == "power":
         handle_power(args)
-    elif(action == "toggle"):
+    elif action == "toggle":
         handle_toggle(args)
-    elif(action == "list"):
+    elif action == "list":
         handle_list(args)
-    elif(action == "color"):
+    elif action == "color":
         handle_color(args)
-    elif(action == "--version"):
+    elif action == "--version":
         print(version)
     sys.exit(0)
 
