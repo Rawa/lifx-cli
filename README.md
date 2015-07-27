@@ -10,4 +10,5 @@ Simple script written in Python 2.7 to control your LIFX lamps using the cli wit
 
 ## License
 See [LICENSE](LICENSE.md)
-Author David Göransson
+
+@Author David Göransson
