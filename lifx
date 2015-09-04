@@ -42,7 +42,7 @@ class ConnectionHandle:
         content = storage.getvalue()
         http_code = c.getinfo(pycurl.HTTP_CODE)
         c.close()
-        handle_response(http_code)
+        handle_response(http_code, content)
 
         return http_code, content
 
@@ -130,28 +130,31 @@ class Parser:
     def color(self, arg):
         options, remainder = getopt.getopt(arg, 'b:h:s:k:r:d:al:g:L:', ["brightness=", "hue=", "kelvin=", "rgb=", "saturation="])
 
-        if len(arg) > 0:
-            color = arg[0]
-            colors = ("white", "red", "orange", "yellow", "cyan", "green", "blue", "purple", "pink")
-            if not (color in colors or color.startswith("#")):
-                error_exit("Bad color argument!")
-            return color, remainder
 
-        if len(options) != 1:
-            error_exit("Only exactly one argument for command color can be supplied")
+        colors = ("white", "red", "orange", "yellow", "cyan", "green", "blue", "purple", "pink")
+        if (arg[0] in colors or arg[0].startswith("#")):
+            if(len(arg) > 1):
+                error_exit("Too many arguments, color or hex may not use additional arguments")
+            return arg[0], remainder
 
+        for opt, rgb in options:
+            if opt in ('-r', '--rgb'):
+                if(len(arg) > 3):
+                    error_exit("Too many arguments, rgb can't be combined")
+                color = "rgb:" + rgb
+                return (color, remainder)
+
+        color = ""
         for opt, arg in options:
             if opt in ('-b', '--brightness'):
-                color = "brightness:" + arg
+                color = color + "&brightness:" + arg
             elif opt in ('-h', '--hue'):
-                color = "hue:" + arg
+                color = color + "&hue:" + arg
             elif opt in ('-k', '--kelvin'):
-                color = "kelvin:" + arg
-            elif opt in ('-r', '--rgb'):
-                color = "rgb:" + arg
+                color = color + "&kelvin:" + arg
             elif opt in ('-s', '--saturation'):
-                color = "saturation:" + arg
-
+                color = color + "&saturation:" + arg
+        color = color[1:]
         return color, remainder
 
 ######################################
@@ -166,7 +169,7 @@ def error_exit(msg=None):
         print(msg)
     sys.exit(1)
 
-def handle_response(code):
+def handle_response(code, content):
     if code in (200 ,201, 202, 207):
         return;
     elif code == 401:
@@ -178,7 +181,10 @@ def handle_response(code):
     elif code in (500, 502, 503, 523):
         print("Server error!")
     else:
-        print("Unknown error! HTTP CODE: " + str(code))
+        print("Unknown error! HTTP Code: " + str(code))
+
+    print("Server response:")
+    print(content)
     sys.exit(1)
 
 def print_help_duration():
@@ -240,6 +246,7 @@ def handle_list(arg):
     handle_remainder(remainder)
     code, data = LIFX().list_lamps(selector)
     decoded = json.loads(data)
+    decoded = decoded.decode('iso-8859-1')
     print("[Label] - [Location]/[Group]\n")
     for item in decoded:
         print(item['label'] + " - " + item['location']['name'] + "/" + item['group']['name'])
