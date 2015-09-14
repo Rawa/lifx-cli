@@ -246,7 +246,6 @@ def handle_list(arg):
     handle_remainder(remainder)
     code, data = LIFX().list_lamps(selector)
     decoded = json.loads(data)
-    decoded = decoded.decode('iso-8859-1')
     print("[Label] - [Location]/[Group]\n")
     for item in decoded:
         print(item['label'] + " - " + item['location']['name'] + "/" + item['group']['name'])
