@@ -11,7 +11,7 @@
 from StringIO import StringIO
 import os, pycurl, sys, json, getopt
 
-version = '1.0'
+version = '1.0b'
 verbose = False
 URL = 'https://api.lifx.com/v1beta1/lights/SELECTOR/ACTION'
 actions = ("power", "toggle", "list", "color", "--version")
