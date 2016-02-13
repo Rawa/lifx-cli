@@ -15,9 +15,19 @@ version = '1.0b'
 verbose = False
 URL = 'https://api.lifx.com/v1beta1/lights/SELECTOR/ACTION'
 actions = ("power", "toggle", "list", "color", "--version")
-
 home = os.getenv("HOME")
 config_path = home + "/.config/lifx/lifx_token"
+
+if not os.path.exists(config_path):
+    print("No config found!")
+    print("  1. Get your developer lifx token:")
+    print("     https://cloud.lifx.com/")
+    print("  2. Save your lifx token to ")
+    print("     " + config_path)
+    print("  3. ????")
+    print("  4. Profit!")
+    sys.exit(1)
+
 f = open(config_path,'r')
 token = f.readline().rstrip()
 f.close()
@@ -284,6 +294,8 @@ def handle_color(arg):
     LIFX().color(color, duration, selector)
 
 def main(argv):
+
+
     if len(argv) < 1 or argv[0] not in actions:
         print_help()
         sys.exit()
