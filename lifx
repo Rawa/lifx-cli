@@ -354,11 +354,11 @@ class Parser:
             help='If true, turn the bulb on if it is not already on.')
         base_effect_parser.add_argument("-p", "--period", type=float, default=1.0,
             help='The time in seconds for one cyles of the effect.')
-        base_effect_parser.add_argument("-cy", "--cycles", type=float, default=1.0,
+        base_effect_parser.add_argument("-C", "--cycles", type=float, default=1.0,
             help='The number of times to repeat the effect.')
-        base_effect_parser.add_argument("-per", "--persist",  action='store_true', default=False,
+        base_effect_parser.add_argument("-e", "--persist",  action='store_true', default=False,
             help='If true, turn the bulb on if it is not already on.')
-        base_effect_parser.add_argument("-pe", "--peak", type=float, default=0.5,
+        base_effect_parser.add_argument("-E", "--peak", type=float, default=0.5,
             help='Defines where in a period the target color is at its maximum. Minimum 0.0, maximum 1.0.')
         self._color_parser(base_effect_parser)
         self._color_from_parser(base_effect_parser)
@@ -372,9 +372,12 @@ class Parser:
     def _addSelectorGroup(self, parser):
         groupSelector = parser.add_mutually_exclusive_group(required=False)
         groupSelector.set_defaults(selector='all')
-        groupSelector.add_argument("-g", "--group", type=str)
-        groupSelector.add_argument("-l", "--label", type=str)
-        groupSelector.add_argument("-L", "--location", type=str)
+        groupSelector.add_argument("-g", "--group", type=str,
+            help='The lights belonging to the groups matching the given label.')
+        groupSelector.add_argument("-l", "--label", type=str,
+            help='Lights that match the label.')
+        groupSelector.add_argument("-L", "--location", type=str,
+            help='The lights belonging to the locations matching the given label.')
 
     def _color_parser(self, parser):
         parser.add_argument("-b", "--brightness", type=float,
