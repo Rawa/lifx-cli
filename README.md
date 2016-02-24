@@ -2,7 +2,7 @@
 Simple script written in Python 3 to control your LIFX lamps using the cli with RESTful calls to the lifx api. 
 
 ## Install (Arch Linux)
-1. \# pacman -S python2 python2-pycurl
+1. \# pacman -S python python-pycurl
 
 2. Go to https://cloud.lifx.com/ and get your lifx token
 
