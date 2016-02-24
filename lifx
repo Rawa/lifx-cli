@@ -9,6 +9,7 @@
 #
 
 from io import BytesIO
+from urllib.parse import urlencode
 import os
 import pycurl
 import sys
@@ -93,13 +94,14 @@ class ConnectionHandle:
         c = pycurl.Curl()
         c.setopt(pycurl.CUSTOMREQUEST, "PUT")
         c.setopt(pycurl.URL, self._build_url(selector, action))
-        c.setopt(pycurl.POSTFIELDS, data)
+        c.setopt(pycurl.POSTFIELDS, urlencode(data))
+
         return self._send_request(c);
 
     def send_post(self, selector, action, data):
         c = pycurl.Curl()
         c.setopt(pycurl.POST, 1)
-        c.setopt(pycurl.POSTFIELDS, data)
+        c.setopt(pycurl.POSTFIELDS, urlencode(data))
         c.setopt(pycurl.URL, self._build_url(selector, action))
         return self._send_request(c)
 
@@ -145,15 +147,15 @@ class LIFX:
     ############### POWER ################
     # STATE: PUT /v1/lights/:selector/state
     def power(self, args):
-        data=""
+        data={}
 
         #power=
         if args.power:
-            data+="power=" + args.power
+            data['power']=args.power
 
         #duration=
         if args.duration is not None:
-            data+="&duration=" + str(args.duration)
+            data['duration']=str(args.duration)
 
         selector = self._get_selector(args)
         ConnectionHandle().send_put(selector, "state", data)
@@ -161,15 +163,15 @@ class LIFX:
     ############### STATE ################
     # STATE: PUT /v1/lights/:selector/state
     def state(self, args):
-        data=""
+        data={}
 
         #power=
         if args.power:
-            data+="power=" + args.power
+            data['power'] = args.power
 
         #duration=
         if args.duration is not None:
-            data+="&duration=" + str(args.duration)
+            data['duration']=str(args.duration)
 
         #color=
         if not_none_exists(args.color,
@@ -196,7 +198,7 @@ class LIFX:
 
             if color.startswith(' '):
                 color=color[1:]
-            data+="&color=" + color
+            data['color']=color
 
         selector = self._get_selector(args)
         ConnectionHandle().send_put(selector, "state", data)
