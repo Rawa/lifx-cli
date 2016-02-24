@@ -174,31 +174,9 @@ class LIFX:
             data['duration']=str(args.duration)
 
         #color=
-        if not_none_exists(args.color,
-                           args.rgb,
-                           args.hue,
-                           args.saturation,
-                           args.brightness,
-                           args.kelvin):
-            color = ""
-            if args.color:
-                color+=args.color
-            elif args.rgb:
-                color+="rgb:" + (",").join(map(str, args.rgb))
-
-            # 0 = False, thus compare with None
-            if args.hue is not None:
-                color+=" hue:" + str(args.hue)
-            if args.saturation is not None:
-                color+=" saturation:" + str(args.saturation)
-            if args.brightness is not None:
-                color+=" brightness:" + str(args.brightness)
-            if args.kelvin is not None:
-                color+=" kelvin:" + str(args.kelvin)
-
-            if color.startswith(' '):
-                color=color[1:]
-            data['color']=color
+        color = self._get_color(args)
+        if color is not None:
+            data['color'] = color
 
         selector = self._get_selector(args)
         ConnectionHandle().send_put(selector, "state", data)
@@ -226,67 +204,60 @@ class LIFX:
             data['peak']=str(args.peak)
 
         data['persist'] = args.persist
-        data['persist'] = args.persist
-        #pulse_parser.add_argument("-P", "--power_on", action='store_true', default=True, help='If true, turn the bulb on if it is not already on.')
-        #pulse_parser.add_argument("-n", "--no_persist",  action='store_false', default=True,
-        #    help='If true, turn the bulb on if it is not already on.')
 
-        #color=
-        if not_none_exists(args.color,
-                           args.rgb,
-                           args.hue,
-                           args.saturation,
-                           args.brightness,
-                           args.kelvin):
-            color = ""
-            if args.color:
-                color+=args.color
-            elif args.rgb:
-                color+="rgb:" + (",").join(map(str, args.rgb))
+        data['power_on'] = args.power_on
 
-            # 0 = False, thus compare with None
-            if args.hue is not None:
-                color+=" hue:" + str(args.hue)
-            if args.saturation is not None:
-                color+=" saturation:" + str(args.saturation)
-            if args.brightness is not None:
-                color+=" brightness:" + str(args.brightness)
-            if args.kelvin is not None:
-                color+=" kelvin:" + str(args.kelvin)
+        color = self._get_color(args)
+        if color is not None:
+            data['color'] = color
 
-            if color.startswith(' '):
-                color=color[1:]
-            data['color']=color
-
-        #from_color=
-        if not_none_exists(args.from_color,
-                           args.from_rgb,
-                           args.from_hue,
-                           args.from_saturation,
-                           args.from_brightness,
-                           args.from_kelvin):
-            from_color = ""
-            if args.from_color:
-                from_color+=args.from_color
-            elif args.from_rgb:
-                from_color+="rgb:" + (",").join(map(str, args.from_rgb))
-
-            # 0 = False, thus compare with None
-            if args.from_hue is not None:
-                from_color+=" hue:" + str(args.from_hue)
-            if args.from_saturation is not None:
-                from_color+=" saturation:" + str(args.from_saturation)
-            if args.from_brightness is not None:
-                from_color+=" brightness:" + str(args.from_brightness)
-            if args.from_kelvin is not None:
-                from_color+=" kelvin:" + str(args.from_kelvin)
-
-            if from_color.startswith(' '):
-                from_color=from_color[1:]
-            data['from_color']=from_color
+        from_color = self._get_color(args, "from_")
+        if from_color is not None:
+            data['from_color'] = from_color
 
         selector = self._get_selector(args)
         ConnectionHandle().send_post(selector, action, data)
+
+    def _get_color(self, args, prefix=""):
+        color = ""
+        args = vars(args)
+        #color=
+        c = prefix + "color"
+        r = prefix + "rgb"
+        h = prefix + "hue"
+        s = prefix + "saturation"
+        b = prefix + "brightness"
+        k = prefix + "kelvin"
+
+        if all_none(args[c],
+                    args[r],
+                    args[h],
+                    args[s],
+                    args[b],
+                    args[k]):
+            # If no color value is set return None
+            return None
+
+        color = ""
+        if args[c]:
+            color+=args[c]
+        elif args[r]:
+            color+="rgb:" + (",").join(map(str, args[r]))
+
+        # 0 = False, thus compare with None
+        if args[h] is not None:
+            color+=" hue:" + str(args[h])
+        if args[s] is not None:
+            color+=" saturation:" + str(args[s])
+        if args[h] is not None:
+            color+=" brightness:" + str(args[h])
+        if args[h] is not None:
+            color+=" kelvin:" + str(args[h])
+
+        if color.startswith(' '):
+            color=color[1:]
+
+        return color
 
     def _get_selector(self, args):
         if args.label:
@@ -411,11 +382,11 @@ def error_exit(msg=None):
         print(msg)
     sys.exit(1)
 
-def not_none_exists(*values):
+def all_none(*values):
     for value in values:
         if value is not None:
-            return True
-    return False
+            return False
+    return True
 
 ############### MAIN ################
 def main(argv):
