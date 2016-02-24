@@ -116,7 +116,6 @@ class LIFX:
     ############### LIST ################
     # LIST: GET /v1/lights/:selector
     def list(self, args):
-        print(args)
         selector = self._get_selector(args)
         code, content = ConnectionHandle().send_get(selector)
 
@@ -164,7 +163,6 @@ class LIFX:
     def state(self, args):
         data=""
 
-        print(args)
         #power=
         if args.power:
             data+="power=" + args.power
@@ -304,18 +302,19 @@ def not_none_exists(*values):
 
 ############### MAIN ################
 def main(argv):
-
+    # Create the parser
     parser = Parser().parser()
 
+    # Parse arguments
     args = parser.parse_args()
 
-    #print(vars(args))
     binds = {"on" : LIFX.power,
              "off" : LIFX.power,
              "state" : LIFX.state,
              "list" : LIFX.list,
              "toggle" : LIFX.toggle}
 
+    # Run command with arguments
     binds[args.sub_action](LIFX(), args)
     sys.exit(0)
 
