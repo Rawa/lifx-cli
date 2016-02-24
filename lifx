@@ -203,6 +203,93 @@ class LIFX:
         selector = self._get_selector(args)
         ConnectionHandle().send_put(selector, "state", data)
 
+    ############### PULSE ################
+    # PULSE: PUT /v1/lights/:selector/pulse
+    def pulse(self, args):
+        self._base_effect(args, "effects/pulse")
+
+
+    def breathe(self, args):
+        self._base_effect(args, "effects/breathe")
+
+
+    def _base_effect(self, args, action):
+        data={}
+
+        if args.period is not None:
+            data['period']=str(args.period)
+
+        if args.cycles is not None:
+            data['cycles']=str(args.cycles)
+
+        if args.peak is not None:
+            data['peak']=str(args.peak)
+
+        data['persist'] = args.persist
+        data['persist'] = args.persist
+        #pulse_parser.add_argument("-P", "--power_on", action='store_true', default=True, help='If true, turn the bulb on if it is not already on.')
+        #pulse_parser.add_argument("-n", "--no_persist",  action='store_false', default=True,
+        #    help='If true, turn the bulb on if it is not already on.')
+
+        #color=
+        if not_none_exists(args.color,
+                           args.rgb,
+                           args.hue,
+                           args.saturation,
+                           args.brightness,
+                           args.kelvin):
+            color = ""
+            if args.color:
+                color+=args.color
+            elif args.rgb:
+                color+="rgb:" + (",").join(map(str, args.rgb))
+
+            # 0 = False, thus compare with None
+            if args.hue is not None:
+                color+=" hue:" + str(args.hue)
+            if args.saturation is not None:
+                color+=" saturation:" + str(args.saturation)
+            if args.brightness is not None:
+                color+=" brightness:" + str(args.brightness)
+            if args.kelvin is not None:
+                color+=" kelvin:" + str(args.kelvin)
+
+            if color.startswith(' '):
+                color=color[1:]
+            data['color']=color
+
+        #from_color=
+        if not_none_exists(args.from_color,
+                           args.from_rgb,
+                           args.from_hue,
+                           args.from_saturation,
+                           args.from_brightness,
+                           args.from_kelvin):
+            from_color = ""
+            if args.from_color:
+                from_color+=args.from_color
+            elif args.from_rgb:
+                from_color+="rgb:" + (",").join(map(str, args.from_rgb))
+
+            # 0 = False, thus compare with None
+            if args.from_hue is not None:
+                from_color+=" hue:" + str(args.from_hue)
+            if args.from_saturation is not None:
+                from_color+=" saturation:" + str(args.from_saturation)
+            if args.from_brightness is not None:
+                from_color+=" brightness:" + str(args.from_brightness)
+            if args.from_kelvin is not None:
+                from_color+=" kelvin:" + str(args.from_kelvin)
+
+            if from_color.startswith(' '):
+                from_color=from_color[1:]
+            data['from_color']=from_color
+
+        print(data)
+
+        selector = self._get_selector(args)
+        ConnectionHandle().send_post(selector, action, data)
+
     def _get_selector(self, args):
         if args.label:
             return "label:" + args.label
@@ -227,6 +314,8 @@ class Parser:
         self._off_parser(subparsers)
         self._list_parser(subparsers)
         self._state_parser(subparsers)
+        self._pulse_parser(subparsers)
+        self._breathe_parser(subparsers)
         self._toggle_parser(subparsers)
         return parser
 
@@ -250,18 +339,32 @@ class Parser:
     def _state_parser(self, subparsers):
         state_parser = subparsers.add_parser('state')
         state_parser.add_argument("-p", "--power", type=str, choices=["on", "off"], default="on",
-            help='Weather to set power to "on" or "off"')
-        state_parser.add_argument("-b", "--brightness", type=float,
-            help='Brightness Help')
-        state_parser.add_argument("-H", "--hue", type=float,
-            help='Hue help')
-        state_parser.add_argument("-k", "--kelvin", type=int,
-            help='Kelvin help')
-        state_parser.add_argument("-s", "--saturation", type=float,
-            help='Saturation help')
+            help='Whether to set power to "on" or "off"')
         self._color_parser(state_parser)
         self._addDurationArgument(state_parser)
         self._addSelectorGroup(state_parser)
+
+    def _breathe_parser(self, subparsers):
+        return self._base_effect_parser(subparsers, 'breathe')
+
+    def _pulse_parser(self, subparsers):
+        return self._base_effect_parser(subparsers, 'pulse')
+
+    def _base_effect_parser(self, subparsers, name):
+        base_effect_parser = subparsers.add_parser(name)
+        base_effect_parser.add_argument("-P", "--power_on", action='store_false', default=True,
+            help='If true, turn the bulb on if it is not already on.')
+        base_effect_parser.add_argument("-p", "--period", type=float, default=1.0,
+            help='The time in seconds for one cyles of the effect.')
+        base_effect_parser.add_argument("-cy", "--cycles", type=float, default=1.0,
+            help='The number of times to repeat the effect.')
+        base_effect_parser.add_argument("-per", "--persist",  action='store_true', default=False,
+            help='If true, turn the bulb on if it is not already on.')
+        base_effect_parser.add_argument("-pe", "--peak", type=float, default=0.5,
+            help='Defines where in a period the target color is at its maximum. Minimum 0.0, maximum 1.0.')
+        self._color_parser(base_effect_parser)
+        self._color_from_parser(base_effect_parser)
+        self._addSelectorGroup(base_effect_parser)
 
     def _toggle_parser(self, subparsers):
         toggle_parser = subparsers.add_parser('toggle')
@@ -276,10 +379,35 @@ class Parser:
         groupSelector.add_argument("-L", "--location", type=str)
 
     def _color_parser(self, parser):
+        parser.add_argument("-b", "--brightness", type=float,
+            help='Brightness Help')
+        parser.add_argument("-H", "--hue", type=float,
+            help='Hue help')
+        parser.add_argument("-k", "--kelvin", type=int,
+            help='Kelvin help')
+        parser.add_argument("-s", "--saturation", type=float,
+            help='Saturation help')
+
         groupColor = parser.add_mutually_exclusive_group(required=False)
         groupColor.add_argument("-c", "--color", type=str,
             help='Color or hex value, e.g. "red" alternatively RRGGBB')
         groupColor.add_argument("-r", "--rgb", type=int, nargs=3,
+            help='rgb in format [1-255] [1-255] [1-255]')
+
+    def _color_from_parser(self, parser):
+        parser.add_argument("-fb", "--from_brightness", type=float,
+            help='Brightness Help')
+        parser.add_argument("-fH", "--from_hue", type=float,
+            help='Hue help')
+        parser.add_argument("-fk", "--from_kelvin", type=int,
+            help='Kelvin help')
+        parser.add_argument("-fs", "--from_saturation", type=float,
+            help='Saturation help')
+
+        groupColor = parser.add_mutually_exclusive_group(required=False)
+        groupColor.add_argument("-fc", "--from_color", type=str,
+            help='Color or hex value, e.g. "red" alternatively RRGGBB')
+        groupColor.add_argument("-fr", "--from_rgb", type=int, nargs=3,
             help='rgb in format [1-255] [1-255] [1-255]')
 
     def _addDurationArgument(self, parser):
@@ -313,6 +441,8 @@ def main(argv):
     binds = {"on" : LIFX.power,
              "off" : LIFX.power,
              "state" : LIFX.state,
+             "pulse" : LIFX.pulse,
+             "breathe" : LIFX.breathe,
              "list" : LIFX.list,
              "toggle" : LIFX.toggle}
 
