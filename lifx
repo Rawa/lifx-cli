@@ -282,9 +282,7 @@ class Parser:
     def parser(self):
         parser = argparse.ArgumentParser(description='Command line interface for LIFX light bulbs.')
         subparsers = parser.add_subparsers(dest="sub_cmd", title='Subcommands',
-            description='state, toggle',
-            help='additional help')
-        subparsers.required = True
+                                           description='To run the lifx cli simply use on of the sub commands listed below.')
         self._on_parser(subparsers)
         self._off_parser(subparsers)
         self._list_parser(subparsers)
@@ -393,6 +391,9 @@ def main(argv):
     # Create the parser
     parser = Parser().parser()
 
+    if len(sys.argv)==1:
+        parser.print_help()
+        sys.exit(1)
     # Parse arguments
     args = parser.parse_args()
 
@@ -405,7 +406,6 @@ def main(argv):
              "toggle" : LIFX.toggle}
 
     # Run command with arguments
-
     binds[args.sub_cmd](LIFX(), args)
 
     sys.exit(0)
