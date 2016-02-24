@@ -142,12 +142,17 @@ class LIFX:
     ############### TOGGLE ################
     # TOGGLE: POST /v1/lights/:selector/toggle
     def toggle(self, args):
-        return ConnectionHandle().send_post(self._get_selector(args), "toggle", "duration=" + str(args.duration))
+        data = {}
+
+        if args.duration is not None:
+            data['duration']=str(args.duration)
+
+        return ConnectionHandle().send_post(self._get_selector(args), "toggle", data)
 
     ############### POWER ################
     # STATE: PUT /v1/lights/:selector/state
     def power(self, args):
-        data={}
+        data = {}
 
         #power=
         if args.power:
@@ -407,12 +412,7 @@ def main(argv):
 
     # Run command with arguments
 
-    print(args)
-    if args.sub_cmd is None:
-        #Show help, no sub_action
-        parser.help()
-    else:
-        binds[args.sub_cmd](LIFX(), args)
+    binds[args.sub_cmd](LIFX(), args)
 
     sys.exit(0)
 
