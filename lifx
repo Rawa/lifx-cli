@@ -285,8 +285,6 @@ class LIFX:
                 from_color=from_color[1:]
             data['from_color']=from_color
 
-        print(data)
-
         selector = self._get_selector(args)
         ConnectionHandle().send_post(selector, action, data)
 
