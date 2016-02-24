@@ -234,13 +234,13 @@ class LIFX:
         b = prefix + "brightness"
         k = prefix + "kelvin"
 
-        if all_none(args[c],
-                    args[r],
-                    args[h],
-                    args[s],
-                    args[b],
-                    args[k]):
-            # If no color value is set return None
+        # If no color value is set return None
+        if all(v is None for v in [args[c],
+                                   args[r],
+                                   args[h],
+                                   args[s],
+                                   args[b],
+                                   args[k]]):
             return None
 
         color = ""
@@ -387,12 +387,6 @@ def error_exit(msg=None):
     if msg != None:
         print(msg)
     sys.exit(1)
-
-def all_none(*values):
-    for value in values:
-        if value is not None:
-            return False
-    return True
 
 ############### MAIN ################
 def main(argv):
