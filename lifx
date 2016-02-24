@@ -361,7 +361,7 @@ class Parser:
         base_effect_parser.add_argument("-E", "--peak", type=float, default=0.5,
             help='Defines where in a period the target color is at its maximum. Minimum 0.0, maximum 1.0.')
         self._color_parser(base_effect_parser)
-        self._color_from_parser(base_effect_parser)
+        self._color_parser(base_effect_parser, "f", "from_")
         self._addSelectorGroup(base_effect_parser)
 
     def _toggle_parser(self, subparsers):
@@ -379,36 +379,22 @@ class Parser:
         groupSelector.add_argument("-L", "--location", type=str,
             help='The lights belonging to the locations matching the given label.')
 
-    def _color_parser(self, parser):
-        parser.add_argument("-b", "--brightness", type=float,
+    def _color_parser(self, parser, prefix="", long_prefix=""):
+        p = "-" + prefix
+        lp = "--" + long_prefix
+        parser.add_argument(p + "b", lp + "brightness", type=float,
             help='Sets brightness without affecting other components')
-        parser.add_argument("-H", "--hue", type=float,
+        parser.add_argument(p + "H", lp + "hue", type=float,
             help='Sets hue without affecting other components')
-        parser.add_argument("-k", "--kelvin", type=int,
+        parser.add_argument(p + "k", lp + "kelvin", type=int,
             help='Sets kelvin to the given value and saturation to 0.0. Other components are not affected.Kelvin help')
-        parser.add_argument("-s", "--saturation", type=float,
+        parser.add_argument(p + "s", lp + "saturation", type=float,
             help='Sets saturation without affecting other components')
 
         groupColor = parser.add_mutually_exclusive_group(required=False)
-        groupColor.add_argument("-c", "--color", type=str,
+        groupColor.add_argument(p + "c", lp + "color", type=str,
             help='Color or hex value, e.g. "red" alternatively RRGGBB')
-        groupColor.add_argument("-r", "--rgb", type=int, nargs=3,
-            help='rgb in format [1-255] [1-255] [1-255]')
-
-    def _color_from_parser(self, parser):
-        parser.add_argument("-fb", "--from_brightness", type=float,
-            help='Sets brightness without affecting other components')
-        parser.add_argument("-fH", "--from_hue", type=float,
-            help='Sets hue without affecting other components')
-        parser.add_argument("-fk", "--from_kelvin", type=int,
-            help='Sets kelvin to the given value and saturation to 0.0. Other components are not affected.Kelvin help')
-        parser.add_argument("-fs", "--from_saturation", type=float,
-            help='Sets saturation without affecting other components')
-
-        groupColor = parser.add_mutually_exclusive_group(required=False)
-        groupColor.add_argument("-fc", "--from_color", type=str,
-            help='Color or hex value, e.g. "red" alternatively RRGGBB')
-        groupColor.add_argument("-fr", "--from_rgb", type=int, nargs=3,
+        groupColor.add_argument(p + "r", lp + "rgb", type=int, nargs=3,
             help='rgb in format [1-255] [1-255] [1-255]')
 
     def _addDurationArgument(self, parser):
