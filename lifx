@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7
+#!/usr/bin/python3
 
 #
 # Simple script to control your LIFX lamps using the cli by doing RESTful calls
@@ -8,7 +8,7 @@
 # @author David Goransson
 #
 
-from StringIO import StringIO
+from io import BytesIO
 import os
 import pycurl
 import sys
@@ -42,9 +42,9 @@ class ConnectionHandle:
         pass
 
     def _send_request(self, c):
-        storage = StringIO()
+        buffer = BytesIO()
 
-        c.setopt(c.WRITEFUNCTION, storage.write)
+        c.setopt(c.WRITEFUNCTION, buffer.write)
         c.setopt(pycurl.CONNECTTIMEOUT, 5)
         c.setopt(pycurl.TIMEOUT, 5)
         c.setopt(pycurl.USERPWD, token)
@@ -53,7 +53,8 @@ class ConnectionHandle:
         except pycurl.error:
             error_exit("Timeout - Unable to reach the server, verify your internet connection")
 
-        content = storage.getvalue()
+        body = buffer.getvalue()
+        content = body.decode('iso-8859-1')
         http_code = c.getinfo(pycurl.HTTP_CODE)
         c.close()
         self._handle_response(http_code, content)
