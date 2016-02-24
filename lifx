@@ -380,13 +380,13 @@ class Parser:
 
     def _color_parser(self, parser):
         parser.add_argument("-b", "--brightness", type=float,
-            help='Brightness Help')
+            help='Sets brightness without affecting other components')
         parser.add_argument("-H", "--hue", type=float,
-            help='Hue help')
+            help='Sets hue without affecting other components')
         parser.add_argument("-k", "--kelvin", type=int,
-            help='Kelvin help')
+            help='Sets kelvin to the given value and saturation to 0.0. Other components are not affected.Kelvin help')
         parser.add_argument("-s", "--saturation", type=float,
-            help='Saturation help')
+            help='Sets saturation without affecting other components')
 
         groupColor = parser.add_mutually_exclusive_group(required=False)
         groupColor.add_argument("-c", "--color", type=str,
@@ -396,13 +396,13 @@ class Parser:
 
     def _color_from_parser(self, parser):
         parser.add_argument("-fb", "--from_brightness", type=float,
-            help='Brightness Help')
+            help='Sets brightness without affecting other components')
         parser.add_argument("-fH", "--from_hue", type=float,
-            help='Hue help')
+            help='Sets hue without affecting other components')
         parser.add_argument("-fk", "--from_kelvin", type=int,
-            help='Kelvin help')
+            help='Sets kelvin to the given value and saturation to 0.0. Other components are not affected.Kelvin help')
         parser.add_argument("-fs", "--from_saturation", type=float,
-            help='Saturation help')
+            help='Sets saturation without affecting other components')
 
         groupColor = parser.add_mutually_exclusive_group(required=False)
         groupColor.add_argument("-fc", "--from_color", type=str,
