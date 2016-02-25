@@ -16,7 +16,7 @@ import sys
 import json
 import argparse
 
-version = '1.1'
+version = 'v1.1'
 verbose = False
 URL = 'https://api.lifx.com/v1/lights/SELECTOR/ACTION'
 actions = ("on", "off", "toggle", "list", "state", "--version")
@@ -281,6 +281,7 @@ class Parser:
 
     def parser(self):
         parser = argparse.ArgumentParser(description='Command line interface for LIFX light bulbs.')
+        parser.add_argument('-V', '--version', action='version', version=version)
         subparsers = parser.add_subparsers(dest="sub_cmd", title='Subcommands',
                                            description='To run the lifx cli simply use on of the sub commands listed below.')
         self._on_parser(subparsers)
