@@ -16,7 +16,7 @@ import sys
 import json
 import argparse
 
-version = '1.0b'
+version = '1.1'
 verbose = False
 URL = 'https://api.lifx.com/v1/lights/SELECTOR/ACTION'
 actions = ("on", "off", "toggle", "list", "state", "--version")
@@ -374,11 +374,11 @@ class Parser:
 
     def _addDurationArgument(self, parser):
         parser.add_argument("-d", "--duration", type=float, default=1.0,
-            help='Duration for transition')
+            help='How long in seconds you want the power action to take.')
 
     def _addVerboseArgument(self, parser):
         parser.add_argument("-v", "--verbose", dest='verbose', action='store_true',
-             help='Duration for transition')
+             help='be verbose')
 
 ######################################
 def error_exit(msg=None):
@@ -387,13 +387,15 @@ def error_exit(msg=None):
     sys.exit(1)
 
 ############### MAIN ################
-def main(argv):
+
+def main():
     # Create the parser
     parser = Parser().parser()
 
     if len(sys.argv)==1:
         parser.print_help()
         sys.exit(1)
+
     # Parse arguments
     args = parser.parse_args()
 
@@ -409,6 +411,3 @@ def main(argv):
     binds[args.sub_cmd](LIFX(), args)
 
     sys.exit(0)
-
-if __name__ == "__main__":
-   main(sys.argv[1:])
