@@ -8,10 +8,8 @@
 # @author David Goransson
 #
 
-from io import BytesIO
-from urllib.parse import urlencode
 import os
-import pycurl
+import requests
 import sys
 import json
 import argparse
@@ -37,34 +35,24 @@ f = open(config_path,'r')
 token = f.readline().rstrip()
 f.close()
 
+headers = {
+    "Authorization": "Bearer %s" % token,
+}
+
 ############### ConnectionHandle ###################
 class ConnectionHandle:
     def ___init__(self):
         pass
 
-    def _send_request(self, c):
-        buffer = BytesIO()
+    def _handle_response(self, response):
+        code = response.status_code
+        content = response.content.decode('iso-8859-1')
 
-        c.setopt(c.WRITEFUNCTION, buffer.write)
-        c.setopt(pycurl.CONNECTTIMEOUT, 5)
-        c.setopt(pycurl.TIMEOUT, 5)
-        c.setopt(pycurl.USERPWD, token)
-        try:
-           c.perform()
-        except pycurl.error:
-            error_exit("Timeout - Unable to reach the server, verify your internet connection")
-
-        body = buffer.getvalue()
-        content = body.decode('iso-8859-1')
-        http_code = c.getinfo(pycurl.HTTP_CODE)
-        c.close()
-        self._handle_response(http_code, content)
-        return http_code, content
-
-    def _handle_response(self, code, content):
         if code in (200 ,201, 202, 207):
+            if verbose:
+                print("%s %s" % (code, content))
             #Everything is fine, exit program peacefully
-            return;
+            return code, content;
         elif code == 401:
             print("Unauthorized request - Verify your lifx token")
         elif code == 408:
@@ -85,30 +73,22 @@ class ConnectionHandle:
             print("Server response:")
             error_exit(content)
 
-    def _build_url(self, selector, action):
+    def _build_url(self, selector, action=""):
         url = URL.replace("SELECTOR", selector)
         url = url.replace("ACTION", action)
         return url
 
     def send_put(self, selector, action, data):
-        c = pycurl.Curl()
-        c.setopt(pycurl.CUSTOMREQUEST, "PUT")
-        c.setopt(pycurl.URL, self._build_url(selector, action))
-        c.setopt(pycurl.POSTFIELDS, urlencode(data))
-
-        return self._send_request(c);
+        r = requests.put(self._build_url(selector, action), data=data, headers=headers)
+        return self._handle_response(r);
 
     def send_post(self, selector, action, data):
-        c = pycurl.Curl()
-        c.setopt(pycurl.POST, 1)
-        c.setopt(pycurl.POSTFIELDS, urlencode(data))
-        c.setopt(pycurl.URL, self._build_url(selector, action))
-        return self._send_request(c)
+        r = requests.post(self._build_url(selector, action), data=data, headers=headers)
+        return self._handle_response(r)
 
     def send_get(self, selector):
-        c = pycurl.Curl()
-        c.setopt(pycurl.URL, self._build_url(selector, ""))
-        return self._send_request(c)
+        r = requests.get(self._build_url(selector), headers=headers)
+        return self._handle_response(r)
 
 ############### LIFX ###################
 class LIFX:
@@ -124,14 +104,14 @@ class LIFX:
         # Parse and print response
         decoded = json.loads(content)
 
-        if args.verbose:
+        if verbose:
             print("[Label] - [Location]/[Group]\n")
             for item in decoded:
                 print(item['label'] + " - " + item['location']['name'] + "/" + item['group']['name'])
                 print("  power      : " + item['power'])
                 print("  hue        : " + str(item['color']['hue']))
                 print("  kelvin     : " + str(item['color']['kelvin']))
-                print("  saturation : " + str(item['color']['saturation']))
+                ("  saturation : " + str(item['color']['saturation']))
                 print("  brightness : " + str(item['brightness']))
         else:
             longestLabel = len(max([item['label'] for item in decoded], key=len))
@@ -283,7 +263,7 @@ class Parser:
         parser = argparse.ArgumentParser(description='Command line interface for LIFX light bulbs.')
         parser.add_argument('-V', '--version', action='version', version=version)
         subparsers = parser.add_subparsers(dest="sub_cmd", title='Subcommands',
-                                           description='To run the lifx cli simply use on of the sub commands listed below.')
+            description='To run the lifx cli simply use on of the sub commands listed below.')
         self._on_parser(subparsers)
         self._off_parser(subparsers)
         self._list_parser(subparsers)
@@ -296,12 +276,14 @@ class Parser:
     def _on_parser(self, subparsers):
         on_parser = subparsers.add_parser('on')
         on_parser.set_defaults(power='on')
+        self._addVerboseArgument(on_parser)
         self._addDurationArgument(on_parser)
         self._addSelectorGroup(on_parser)
 
     def _off_parser(self, subparsers):
         off_parser = subparsers.add_parser('off')
         off_parser.set_defaults(power='off')
+        self._addVerboseArgument(off_parser)
         self._addDurationArgument(off_parser)
         self._addSelectorGroup(off_parser)
 
@@ -314,6 +296,7 @@ class Parser:
         state_parser = subparsers.add_parser('state')
         state_parser.add_argument("-p", "--power", type=str, choices=["on", "off"], default="on",
             help='Whether to set power to "on" or "off"')
+        self._addVerboseArgument(state_parser)
         self._color_parser(state_parser)
         self._addDurationArgument(state_parser)
         self._addSelectorGroup(state_parser)
@@ -336,12 +319,14 @@ class Parser:
             help='If true, turn the bulb on if it is not already on.')
         base_effect_parser.add_argument("-E", "--peak", type=float, default=0.5,
             help='Defines where in a period the target color is at its maximum. Minimum 0.0, maximum 1.0.')
+        self._addVerboseArgument(base_effect_parser)
         self._color_parser(base_effect_parser)
         self._color_parser(base_effect_parser, "f", "from_")
         self._addSelectorGroup(base_effect_parser)
 
     def _toggle_parser(self, subparsers):
         toggle_parser = subparsers.add_parser('toggle')
+        self._addVerboseArgument(toggle_parser)
         self._addDurationArgument(toggle_parser)
         self._addSelectorGroup(toggle_parser)
 
@@ -390,6 +375,7 @@ def error_exit(msg=None):
 ############### MAIN ################
 
 def main():
+
     # Create the parser
     parser = Parser().parser()
 
@@ -399,6 +385,10 @@ def main():
 
     # Parse arguments
     args = parser.parse_args()
+
+    if hasattr(args, 'verbose') and args.verbose is True:
+        global verbose
+        verbose=True
 
     binds = {"on" : LIFX.power,
              "off" : LIFX.power,
