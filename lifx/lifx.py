@@ -49,8 +49,6 @@ class ConnectionHandle:
         content = response.content.decode('iso-8859-1')
 
         if code in (200 ,201, 202, 207):
-            if verbose:
-                print("%s %s" % (code, content))
             #Everything is fine, exit program peacefully
             return code, content;
         elif code == 401:
