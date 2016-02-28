@@ -14,7 +14,7 @@ import json
 import argparse
 from pathlib import Path  # Requires python >= 3.5
 
-version = 'v1.1'
+version = 'v1.2'
 verbose = False
 URL = 'https://api.lifx.com/v1/lights/SELECTOR/ACTION'
 actions = ("on", "off", "toggle", "list", "state", "--version")
@@ -32,9 +32,7 @@ else:
         config_path.parent.mkdir(parents=True)
     config_path.write_text(token.strip())
 
-headers = {
-    "Authorization": "Bearer %s" % token,
-}
+headers = { "Authorization": "Bearer %s" % token }
 
 
 ############### ConnectionHandle ###################
@@ -52,7 +50,7 @@ class ConnectionHandle:
         elif code == 401:
             print("Unauthorized request - Verify your lifx token")
         elif code == 408:
-            print("Request timed out -  Light unreachable!")
+            print("Request timed out - Light unreachable!")
         elif code == 422:
             print("Unprocessable Entity - Missing or malformed parameters.")
         elif code == 429:
@@ -106,16 +104,19 @@ class LIFX:
         if verbose:
             print("[Label] - [Location]/[Group]\n")
             for item in decoded:
-                print(item['label'] + " - " + item['location']['name'] + "/" + item['group']['name'])
+                print(item['label'] + " - " + item['location']['name'] + "/"
+                    + item['group']['name'])
                 print("  power      : " + item['power'])
                 print("  hue        : " + str(item['color']['hue']))
                 print("  kelvin     : " + str(item['color']['kelvin']))
                 ("  saturation : " + str(item['color']['saturation']))
                 print("  brightness : " + str(item['brightness']))
         else:
-            longestLabel = len(max([item['label'] for item in decoded], key=len))
+            longestLabel = len(max([item['label'] for item in decoded],
+                                   key=len))
             for item in decoded:
-                print(("{:" + str(longestLabel) + "} {}").format(item['label'], item['power']))
+                print(("{:" + str(longestLabel) + "} {}").format(item['label'],
+                                                                 item['power']))
 
 
     ############### TOGGLE ################
@@ -126,7 +127,8 @@ class LIFX:
         if args.duration is not None:
             data['duration'] = str(args.duration)
 
-        return ConnectionHandle().send_post(self._get_selector(args), "toggle", data)
+        return ConnectionHandle().send_post(
+            self._get_selector(args), "toggle", data)
 
     ############### POWER ################
     # STATE: PUT /v1/lights/:selector/state
@@ -258,10 +260,13 @@ class Parser:
         pass
 
     def parser(self):
-        parser = argparse.ArgumentParser(description='Command line interface for LIFX light bulbs.')
-        parser.add_argument('-V', '--version', action='version', version=version)
+        parser = argparse.ArgumentParser(
+            description='Command line interface for LIFX light bulbs.')
+        parser.add_argument('-V', '--version', action='version',
+                version=version)
         subparsers = parser.add_subparsers(dest="sub_cmd", title='Subcommands',
-            description='To run the lifx cli simply use on of the sub commands listed below.')
+            description='To run the lifx cli simply use on of the sub '
+                        + 'commands listed below.')
         self._on_parser(subparsers)
         self._off_parser(subparsers)
         self._list_parser(subparsers)
@@ -292,8 +297,9 @@ class Parser:
 
     def _state_parser(self, subparsers):
         state_parser = subparsers.add_parser('state')
-        state_parser.add_argument("-p", "--power", type=str, choices=["on", "off"], default="on",
-                                  help='Whether to set power to "on" or "off"')
+        state_parser.add_argument("-p", "--power",
+            type=str, choices=["on", "off"], default="on",
+            help='Whether to set power to "on" or "off"')
         self._addVerboseArgument(state_parser)
         self._color_parser(state_parser)
         self._addDurationArgument(state_parser)
@@ -306,21 +312,24 @@ class Parser:
         return self._base_effect_parser(subparsers, 'pulse')
 
     def _base_effect_parser(self, subparsers, name):
-        base_effect_parser = subparsers.add_parser(name)
-        base_effect_parser.add_argument("-P", "--power_on", action='store_false', default=True,
+        be_parser = subparsers.add_parser(name)
+        be_parser.add_argument("-P", "--power_on", action='store_false',
+            default=True,
             help='If true, turn the bulb on if it is not already on.')
-        base_effect_parser.add_argument("-p", "--period", type=float, default=1.0,
+        be_parser.add_argument("-p", "--period", type=float, default=1.0,
             help='The time in seconds for one cyles of the effect.')
-        base_effect_parser.add_argument("-C", "--cycles", type=float, default=1.0,
+        be_parser.add_argument("-C", "--cycles", type=float, default=1.0,
             help='The number of times to repeat the effect.')
-        base_effect_parser.add_argument("-e", "--persist",  action='store_true', default=False,
+        be_parser.add_argument("-e", "--persist", action='store_true',
+             default=False,
             help='If true, turn the bulb on if it is not already on.')
-        base_effect_parser.add_argument("-E", "--peak", type=float, default=0.5,
-            help='Defines where in a period the target color is at its maximum. Minimum 0.0, maximum 1.0.')
-        self._addVerboseArgument(base_effect_parser)
-        self._color_parser(base_effect_parser)
-        self._color_parser(base_effect_parser, "f", "from_")
-        self._addSelectorGroup(base_effect_parser)
+        be_parser.add_argument("-E", "--peak", type=float, default=0.5,
+            help='Defines where in a period the target color is at its '
+                + 'maximum. Minimum 0.0, maximum 1.0.')
+        self._addVerboseArgument(be_parser)
+        self._color_parser(be_parser)
+        self._color_parser(be_parser, "f", "from_")
+        self._addSelectorGroup(be_parser)
 
     def _toggle_parser(self, subparsers):
         toggle_parser = subparsers.add_parser('toggle')
@@ -336,7 +345,8 @@ class Parser:
         groupSelector.add_argument("-l", "--label", type=str,
             help='Lights that match the label.')
         groupSelector.add_argument("-L", "--location", type=str,
-            help='The lights belonging to the locations matching the given label.')
+            help='The lights belonging to the locations matching the given '
+                + 'label.')
 
     def _color_parser(self, parser, prefix="", long_prefix=""):
         p = "-" + prefix
@@ -346,7 +356,8 @@ class Parser:
         parser.add_argument(p + "H", lp + "hue", type=float,
             help='Sets hue without affecting other components')
         parser.add_argument(p + "k", lp + "kelvin", type=int,
-            help='Sets kelvin to the given value and saturation to 0.0. Other components are not affected.Kelvin help')
+            help='Sets kelvin to the given value and saturation to 0.0. Other '
+                + 'components are not affected.Kelvin help')
         parser.add_argument(p + "s", lp + "saturation", type=float,
             help='Sets saturation without affecting other components')
 
@@ -361,8 +372,9 @@ class Parser:
             help='How long in seconds you want the power action to take.')
 
     def _addVerboseArgument(self, parser):
-        parser.add_argument("-v", "--verbose", dest='verbose', action='store_true',
-             help='be verbose')
+        parser.add_argument("-v", "--verbose", dest='verbose',
+             action='store_true',
+            help='be verbose')
 
 
 ######################################
