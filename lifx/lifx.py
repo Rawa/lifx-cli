@@ -36,6 +36,7 @@ headers = {
     "Authorization": "Bearer %s" % token,
 }
 
+
 ############### ConnectionHandle ###################
 class ConnectionHandle:
     def ___init__(self):
@@ -45,9 +46,9 @@ class ConnectionHandle:
         code = response.status_code
         content = response.content.decode('iso-8859-1')
 
-        if code in (200 ,201, 202, 207):
-            #Everything is fine, exit program peacefully
-            return code, content;
+        if code in (200, 201, 202, 207):
+            # Everything is fine, exit program peacefully
+            return code, content
         elif code == 401:
             print("Unauthorized request - Verify your lifx token")
         elif code == 408:
@@ -74,16 +75,19 @@ class ConnectionHandle:
         return url
 
     def send_put(self, selector, action, data):
-        r = requests.put(self._build_url(selector, action), data=data, headers=headers)
-        return self._handle_response(r);
+        r = requests.put(self._build_url(selector, action),
+                         data=data, headers=headers)
+        return self._handle_response(r)
 
     def send_post(self, selector, action, data):
-        r = requests.post(self._build_url(selector, action), data=data, headers=headers)
+        r = requests.post(self._build_url(selector, action),
+                          data=data, headers=headers)
         return self._handle_response(r)
 
     def send_get(self, selector):
         r = requests.get(self._build_url(selector), headers=headers)
         return self._handle_response(r)
+
 
 ############### LIFX ###################
 class LIFX:
@@ -120,7 +124,7 @@ class LIFX:
         data = {}
 
         if args.duration is not None:
-            data['duration']=str(args.duration)
+            data['duration'] = str(args.duration)
 
         return ConnectionHandle().send_post(self._get_selector(args), "toggle", data)
 
@@ -129,13 +133,13 @@ class LIFX:
     def power(self, args):
         data = {}
 
-        #power=
+        # power=
         if args.power:
-            data['power']=args.power
+            data['power'] = args.power
 
-        #duration=
+        # duration=
         if args.duration is not None:
-            data['duration']=str(args.duration)
+            data['duration'] = str(args.duration)
 
         selector = self._get_selector(args)
         ConnectionHandle().send_put(selector, "state", data)
@@ -143,17 +147,17 @@ class LIFX:
     ############### STATE ################
     # STATE: PUT /v1/lights/:selector/state
     def state(self, args):
-        data={}
+        data = {}
 
-        #power=
+        # power=
         if args.power:
             data['power'] = args.power
 
-        #duration=
+        # duration=
         if args.duration is not None:
-            data['duration']=str(args.duration)
+            data['duration'] = str(args.duration)
 
-        #color=
+        # color=
         color = self._get_color(args)
         if color is not None:
             data['color'] = color
@@ -166,22 +170,20 @@ class LIFX:
     def pulse(self, args):
         self._base_effect(args, "effects/pulse")
 
-
     def breathe(self, args):
         self._base_effect(args, "effects/breathe")
 
-
     def _base_effect(self, args, action):
-        data={}
+        data = {}
 
         if args.period is not None:
-            data['period']=str(args.period)
+            data['period'] = str(args.period)
 
         if args.cycles is not None:
-            data['cycles']=str(args.cycles)
+            data['cycles'] = str(args.cycles)
 
         if args.peak is not None:
-            data['peak']=str(args.peak)
+            data['peak'] = str(args.peak)
 
         data['persist'] = args.persist
 
@@ -201,7 +203,7 @@ class LIFX:
     def _get_color(self, args, prefix=""):
         color = ""
         args = vars(args)
-        #color=
+        # color=
         c = prefix + "color"
         r = prefix + "rgb"
         h = prefix + "hue"
@@ -220,22 +222,22 @@ class LIFX:
 
         color = ""
         if args[c]:
-            color+=args[c]
+            color += args[c]
         elif args[r]:
-            color+="rgb:" + (",").join(map(str, args[r]))
+            color += "rgb:" + (",").join(map(str, args[r]))
 
         # 0 = False, thus compare with None
         if args[h] is not None:
-            color+=" hue:" + str(args[h])
+            color += " hue:" + str(args[h])
         if args[s] is not None:
-            color+=" saturation:" + str(args[s])
+            color += " saturation:" + str(args[s])
         if args[h] is not None:
-            color+=" brightness:" + str(args[h])
+            color += " brightness:" + str(args[h])
         if args[h] is not None:
-            color+=" kelvin:" + str(args[h])
+            color += " kelvin:" + str(args[h])
 
         if color.startswith(' '):
-            color=color[1:]
+            color = color[1:]
 
         return color
 
@@ -248,6 +250,7 @@ class LIFX:
             return "group:" + args.group
         else:
             return "all"
+
 
 ############### Parser ###################
 class Parser:
@@ -290,7 +293,7 @@ class Parser:
     def _state_parser(self, subparsers):
         state_parser = subparsers.add_parser('state')
         state_parser.add_argument("-p", "--power", type=str, choices=["on", "off"], default="on",
-            help='Whether to set power to "on" or "off"')
+                                  help='Whether to set power to "on" or "off"')
         self._addVerboseArgument(state_parser)
         self._color_parser(state_parser)
         self._addDurationArgument(state_parser)
@@ -361,20 +364,21 @@ class Parser:
         parser.add_argument("-v", "--verbose", dest='verbose', action='store_true',
              help='be verbose')
 
+
 ######################################
 def error_exit(msg=None):
     if msg != None:
         print(msg)
     sys.exit(1)
 
-############### MAIN ################
 
+############### MAIN ################
 def main():
 
     # Create the parser
     parser = Parser().parser()
 
-    if len(sys.argv)==1:
+    if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)
 
@@ -383,15 +387,15 @@ def main():
 
     if hasattr(args, 'verbose') and args.verbose is True:
         global verbose
-        verbose=True
+        verbose = True
 
-    binds = {"on" : LIFX.power,
-             "off" : LIFX.power,
-             "state" : LIFX.state,
-             "pulse" : LIFX.pulse,
-             "breathe" : LIFX.breathe,
-             "list" : LIFX.list,
-             "toggle" : LIFX.toggle}
+    binds = {"on":      LIFX.power,
+             "off":     LIFX.power,
+             "state":   LIFX.state,
+             "pulse":   LIFX.pulse,
+             "breathe": LIFX.breathe,
+             "list":    LIFX.list,
+             "toggle":  LIFX.toggle}
 
     # Run command with arguments
     binds[args.sub_cmd](LIFX(), args)
