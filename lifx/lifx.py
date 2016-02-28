@@ -34,8 +34,7 @@ else:
 
 headers = { "Authorization": "Bearer %s" % token }
 
-
-############### ConnectionHandle ###################
+############### ConnectionHandle ###############
 class ConnectionHandle:
     def ___init__(self):
         pass
@@ -87,12 +86,12 @@ class ConnectionHandle:
         return self._handle_response(r)
 
 
-############### LIFX ###################
+############### LIFX ###############
 class LIFX:
     def ___init__(self):
         pass
 
-    ############### LIST ################
+    ############### LIST ###############
     # LIST: GET /v1/lights/:selector
     def list(self, args):
         selector = self._get_selector(args)
@@ -119,7 +118,7 @@ class LIFX:
                                                                  item['power']))
 
 
-    ############### TOGGLE ################
+    ############### TOGGLE ###############
     # TOGGLE: POST /v1/lights/:selector/toggle
     def toggle(self, args):
         data = {}
@@ -130,7 +129,7 @@ class LIFX:
         return ConnectionHandle().send_post(
             self._get_selector(args), "toggle", data)
 
-    ############### POWER ################
+    ############### POWER ###############
     # STATE: PUT /v1/lights/:selector/state
     def power(self, args):
         data = {}
@@ -146,7 +145,7 @@ class LIFX:
         selector = self._get_selector(args)
         ConnectionHandle().send_put(selector, "state", data)
 
-    ############### STATE ################
+    ############### STATE ###############
     # STATE: PUT /v1/lights/:selector/state
     def state(self, args):
         data = {}
@@ -167,7 +166,7 @@ class LIFX:
         selector = self._get_selector(args)
         ConnectionHandle().send_put(selector, "state", data)
 
-    ############### PULSE ################
+    ############### PULSE ###############
     # PULSE: PUT /v1/lights/:selector/pulse
     def pulse(self, args):
         self._base_effect(args, "effects/pulse")
@@ -254,7 +253,7 @@ class LIFX:
             return "all"
 
 
-############### Parser ###################
+############### Parser ###############
 class Parser:
     def ___init__(self):
         pass
@@ -377,14 +376,15 @@ class Parser:
             help='be verbose')
 
 
-######################################
+############### OTHER ###############
+
 def error_exit(msg=None):
     if msg != None:
         print(msg)
     sys.exit(1)
 
 
-############### MAIN ################
+############### MAIN ###############
 def main():
 
     # Create the parser
