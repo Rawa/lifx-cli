@@ -22,7 +22,7 @@ config_path = Path.home() / ".config/lifx/lifx_token"
 token = None
 
 if config_path.exists():
-    token = config_path.read_text()
+    token = config_path.read_text().strip()
 else:
     print("No personal access token found!")
     print("  1. Get your developer lifx token:")
