@@ -5,35 +5,32 @@
 # to the lifx api. Needs a valid lifx token to make requests, the token should
 # be saved in $HOME/.config/lifx/lifx_token
 #
-# @author David Goransson
+# @author David Göransson
 #
 
-import os
 import requests
 import sys
 import json
 import argparse
+from pathlib import Path  # Requires python >= 3.5
 
 version = 'v1.1'
 verbose = False
 URL = 'https://api.lifx.com/v1/lights/SELECTOR/ACTION'
 actions = ("on", "off", "toggle", "list", "state", "--version")
-home = os.getenv("HOME")
-config_path = home + "/.config/lifx/lifx_token"
+config_path = Path.home() / ".config/lifx/lifx_token"
+token = None
 
-if not os.path.exists(config_path):
-    print("No config found!")
+if config_path.exists():
+    token = config_path.read_text()
+else:
+    print("No personal access token found!")
     print("  1. Get your developer lifx token:")
-    print("     https://cloud.lifx.com/")
-    print("  2. Save your lifx token to ")
-    print("     " + config_path)
-    print("  3. ????")
-    print("  4. Profit!")
-    sys.exit(1)
-
-f = open(config_path,'r')
-token = f.readline().rstrip()
-f.close()
+    print("     https://cloud.lifx.com/settings")
+    token = input("  2. Paste it here:  ")
+    if not config_path.parent.exists():
+        config_path.parent.mkdir(parents=True)
+    config_path.write_text(token.strip())
 
 headers = {
     "Authorization": "Bearer %s" % token,
@@ -400,3 +397,7 @@ def main():
     binds[args.sub_cmd](LIFX(), args)
 
     sys.exit(0)
+
+
+if __name__ == '__main__':
+    main()
