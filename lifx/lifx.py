@@ -158,6 +158,10 @@ class LIFX:
         if args.duration is not None:
             data['duration'] = str(args.duration)
 
+        # brightness=
+        if args.brightness is not None:
+            data['brightness'] = str(args.brightness)
+
         # color=
         color = self._get_color(args)
         if color is not None:
@@ -209,7 +213,6 @@ class LIFX:
         r = prefix + "rgb"
         h = prefix + "hue"
         s = prefix + "saturation"
-        b = prefix + "brightness"
         k = prefix + "kelvin"
 
         # If no color value is set return None
@@ -217,7 +220,6 @@ class LIFX:
                                    args[r],
                                    args[h],
                                    args[s],
-                                   args[b],
                                    args[k]]):
             return None
 
@@ -232,10 +234,8 @@ class LIFX:
             color += " hue:" + str(args[h])
         if args[s] is not None:
             color += " saturation:" + str(args[s])
-        if args[h] is not None:
-            color += " brightness:" + str(args[h])
-        if args[h] is not None:
-            color += " kelvin:" + str(args[h])
+        if args[k] is not None:
+            color += " kelvin:" + str(args[k])
 
         if color.startswith(' '):
             color = color[1:]
@@ -299,6 +299,8 @@ class Parser:
         state_parser.add_argument("-p", "--power",
             type=str, choices=["on", "off"], default="on",
             help='Whether to set power to "on" or "off"')
+        state_parser.add_argument("-b", "--brightness", type=float,
+            help='Sets brightness without affecting other components')
         self._addVerboseArgument(state_parser)
         self._color_parser(state_parser)
         self._addDurationArgument(state_parser)
@@ -350,8 +352,6 @@ class Parser:
     def _color_parser(self, parser, prefix="", long_prefix=""):
         p = "-" + prefix
         lp = "--" + long_prefix
-        parser.add_argument(p + "b", lp + "brightness", type=float,
-            help='Sets brightness without affecting other components')
         parser.add_argument(p + "H", lp + "hue", type=float,
             help='Sets hue without affecting other components')
         parser.add_argument(p + "k", lp + "kelvin", type=int,
